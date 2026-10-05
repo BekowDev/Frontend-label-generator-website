@@ -1,4 +1,5 @@
 import { LabelAPI } from "@/api/LabelAPI"
+import { demoLabels } from "./demoData"
 
 export const labelModule = {
     state: () => ({
@@ -8,6 +9,7 @@ export const labelModule = {
         printActive: false,
         printing: false,
         labels: [],
+        demoLabels: demoLabels.map(label => ({ ...label })),
         chosenLabel: undefined,
         chosenLabels: [],
         totalPage: '0',
@@ -134,6 +136,26 @@ export const labelModule = {
         setLabels(state, value) {
             state.labels = value.map(e => ({ ...e, chose: false }))
         },
+        addDemoLabels(state, labels) {
+            const createdAt = new Date().toISOString()
+            labels.forEach((label, index) => {
+                state.demoLabels.unshift({
+                    ...label,
+                    _id: `demo-${Date.now()}-${index}`,
+                    addedDate: createdAt,
+                })
+            })
+        },
+        updateDemoLabels(state, labels) {
+            labels.forEach((label) => {
+                const index = state.demoLabels.findIndex(item => item._id === label._id)
+                if (index !== -1)
+                    state.demoLabels.splice(index, 1, { ...state.demoLabels[index], ...label })
+            })
+        },
+        deleteDemoLabels(state, ids) {
+            state.demoLabels = state.demoLabels.filter(label => !ids.includes(label._id))
+        },
         setSortBy(state, value) {
             state.getData.sortBy = value
         },
@@ -155,7 +177,23 @@ export const labelModule = {
         },
     },
     actions: {
-        async getLabels({ commit, state }) {
+        async getLabels({ commit, state, rootState }) {
+            if (rootState.demoMode) {
+                const search = state.getData.search.toLowerCase()
+                const filteredLabels = state.demoLabels
+                    .filter(label => Object.values(label).some(value => String(value).toLowerCase().includes(search)))
+                    .sort((first, second) => {
+                        const firstValue = first[state.getData.sortBy] || ""
+                        const secondValue = second[state.getData.sortBy] || ""
+                        const comparison = String(firstValue).localeCompare(String(secondValue))
+                        return state.getData.sortOrder === "desc" ? -comparison : comparison
+                    })
+                const start = (Number(state.getData.page) - 1) * Number(state.getData.limit)
+                commit('setLabels', filteredLabels.slice(start, start + Number(state.getData.limit)))
+                commit('setTotalPage', filteredLabels.length)
+                return
+            }
+
             try {
                 setTimeout(
                     async () => {
@@ -168,19 +206,29 @@ export const labelModule = {
                 console.error("Ошибка при отправке POST-запроса:", error)
             }
         },
-        async deleteLabels({ commit, state }) {
+        async deleteLabels({ commit, state, rootState }) {
             try {
                 const deleteIds = state.chosenLabels.map((obj) => {
                     return obj._id.toString()
                 })
+                if (rootState.demoMode) {
+                    commit('deleteDemoLabels', deleteIds)
+                    commit('clearChosenLabels')
+                    return
+                }
                 await LabelAPI.deleteLabels(deleteIds)
                 commit('clearChosenLabels')
             } catch (error) {
                 console.error("Ошибка при отправке POST-запроса:", error)
             }
         },
-        async deleteLabel({ commit }, id) {
+        async deleteLabel({ commit, rootState }, id) {
             try {
+                if (rootState.demoMode) {
+                    commit('deleteDemoLabels', [id])
+                    commit('deleteFromChosenLabels', id)
+                    return
+                }
                 const deleteId = [id]
                 await LabelAPI.deleteLabels(deleteId)
                 commit('deleteFromChosenLabels', id)

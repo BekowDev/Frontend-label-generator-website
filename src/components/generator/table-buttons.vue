@@ -3,7 +3,7 @@
         <div class="flex gap-3">
             <base-button
                 class="flex flex-1 items-center gap-2"
-                @click.prevent="$store.dispatch('sendLabels')"
+                @click.prevent="saveLabels"
             >
                 <img
                     src="@/assets/icons/download.png"
@@ -87,7 +87,12 @@
 </template>
 <script>
 export default {
-
+    methods: {
+        async saveLabels() {
+            const saved = await this.$store.dispatch('sendLabels')
+            if (saved && this.$store.state.demoMode)
+                this.$router.push('/labels')
+        }
+    }
 }
 </script>
-

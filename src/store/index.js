@@ -7,8 +7,16 @@ export default createStore({
     state: () => ({
         theme: localStorage.getItem("theme") || 'light',
         language: localStorage.getItem("language") || 'ru',
+        demoMode: sessionStorage.getItem("demoMode") === "true",
     }),
     mutations: {
+        setDemoMode(state, value) {
+            state.demoMode = value
+            if (value)
+                sessionStorage.setItem("demoMode", "true")
+            else
+                sessionStorage.removeItem("demoMode")
+        },
         setTheme(state, value) {
             state.theme = value
             localStorage.setItem("theme", value)

@@ -5,13 +5,15 @@ import LandingVue from "@/pages/Landing.vue"
 
 import { createRouter, createWebHistory } from "vue-router"
 
-const isAuthorized = localStorage.hasOwnProperty("token")
-//! token need to check with valid
 const authGuard = function (to, from, next) {
-    !isAuthorized ? next({ path: "/auth" }) : next()
+    const isAuthorized = localStorage.hasOwnProperty("token")
+    const isDemoMode = sessionStorage.getItem("demoMode") === "true"
+    !isAuthorized && !isDemoMode ? next({ path: "/auth" }) : next()
 }
 const authorized = function (to, from, next) {
-    isAuthorized ? next({ path: "/labels" }) : next()
+    const isAuthorized = localStorage.hasOwnProperty("token")
+    const isDemoMode = sessionStorage.getItem("demoMode") === "true"
+    isAuthorized || isDemoMode ? next({ path: "/labels" }) : next()
 }
 
 const routes = [

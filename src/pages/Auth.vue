@@ -119,6 +119,14 @@
                  :style="!$store.state.authModule.haveAccount ? 'translate: 100%;' : 'translate: 0%;'"></div>
         </div>
     </div>
+    <div class="flex flex-col items-center gap-2 pb-8">
+        <base-button @click="startDemo">
+            {{ $t('authDemoButton') }}
+        </base-button>
+        <p class="text-sm text-center">
+            {{ $t('authDemoHint') }}
+        </p>
+    </div>
 </template>
 <script>
 export default {
@@ -129,6 +137,10 @@ export default {
         }
     },
     methods: {
+        startDemo() {
+            this.$store.commit('setDemoMode', true)
+            this.$router.push('/labels')
+        },
         signIn() {
             this.$store.dispatch('signIn', { username: this.username, password: this.password })
         },

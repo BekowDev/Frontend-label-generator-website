@@ -408,7 +408,26 @@ export const generatorModule = {
         },
     },
     actions: {
-        async sendLabels({ commit, state }) {
+        async sendLabels({ commit, state, rootState }) {
+            if (rootState.demoMode) {
+                const validRows = state.rows.filter(row => row.barcode.trim())
+                if (!validRows.length) {
+                    alert('Укажите штрихкод хотя бы для одной позиции')
+                    return false
+                }
+
+                if (state.editMode) {
+                    commit('updateDemoLabels', validRows)
+                    commit('setEditMode', false)
+                }
+                else {
+                    const labels = validRows.map(({ _id, ...label }) => label)
+                    commit('addDemoLabels', labels)
+                }
+                commit('clearTable')
+                return true
+            }
+
             try {
                 if (state.editMode) {
                     if (state.rows.some(row => row.barcode !== "")) {
@@ -416,6 +435,7 @@ export const generatorModule = {
                         if (res) {
                             commit('setEditMode', false)
                             commit('clearTable')
+                            return true
                         }
                     }
                     else {
@@ -426,9 +446,11 @@ export const generatorModule = {
                     const data = state.rows.map(({ _id, ...temp }) => temp); // убрать id всех элементов
                     await LabelAPI.createLabels(data)
                     commit('clearTable')
+                    return true
                 }
             } catch (error) {
                 console.error("Ошибка при отправке POST-запроса:", error)
+                return false
             }
         },
     },
